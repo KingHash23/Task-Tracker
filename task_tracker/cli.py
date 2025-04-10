@@ -179,6 +179,10 @@ def main():
         - Store them in JSON format.
         - Keep a log of them.
         - Categorize them by using specific labels.
+        
+        [bold]Connect with the author:[/bold]
+        - 📂 [link=https://github.com/yashksaini-coder]GitHub[/link]
+        - 🌐 [link=https://twitter.com/yash_k_saini]Twitter[/link]
         """,
         style="green"
     )
