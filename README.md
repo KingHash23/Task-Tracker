@@ -1,5 +1,6 @@
 <div align="center">
-    <img src="https://socialify.git.ci/yashksaini-coder/Task-Tracker/image?forks=1&issues=1&language=1&name=1&pulls=1&stargazers=1&theme=Auto" alt="Task Tracker CLI" width="640" height="320" />
+    <img src="./public/demo.png" alt="Task Tracker CLI"/>
+    <!-- <img src="https://socialify.git.ci/yashksaini-coder/Task-Tracker/image?forks=1&issues=1&language=1&name=1&pulls=1&stargazers=1&theme=Auto" alt="Task Tracker CLI" width="640" height="320" /> -->
 </div>
 <br><br>
 
