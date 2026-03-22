@@ -106,12 +106,106 @@ The program does not check whether the description is empty or invalid before sa
 
 Based on the analysis of the original code, the following targeted fixes will be implemented:
 
-1. Replace silent handling of `JSONDecodeError` in `load_tasks()` with explicit error reporting and logging.
-2. Add targeted exception handling for file input/output failures such as `OSError`.
-3. Introduce meaningful logging using Python’s `logging` module to record application events and failures.
-4. Validate task descriptions before saving or updating tasks to prevent empty or invalid input.
-5. Improve reliability of save operations by handling write failures safely and informing the user appropriately.
+1. Replaced silent handling of `JSONDecodeError` in `load_tasks()` with explicit error reporting.
+where the former one was:
+``` python
+def load_tasks(): 
+    if not os.path.exists('tasks.json'):
+         with open('tasks.json', 'w') as file: 
+            json.dump([], file) return [] with open('tasks.json', 'r') as file: 
+            try: return json.load(file) except json.JSONDecodeError:
+             return []
+```
+to
+```python
+def load_tasks():
+    if not os.path.exists(TASKS_FILE):
+        try:
+            with open(TASKS_FILE, "w", encoding="utf-8") as file:
+                json.dump([], file)
+            logging.info("Created new task storage file: %s", TASKS_FILE)
+            return []
+        except OSError as e:
+            logging.error("Failed to create %s: %s", TASKS_FILE, e, exc_info=True)
+            console.print("[red]Error: Could not create task storage file.[/red]")
+            return []
 
-These fixes were selected because they directly address the major weaknesses identified in the original implementation while remaining focused and practical for the scope of the assignment.
+    try:
+        with open(TASKS_FILE, "r", encoding="utf-8") as file:
+            tasks = json.load(file)
+            logging.info("Loaded %d task(s) from %s", len(tasks), TASKS_FILE)
+            return tasks
+    except json.JSONDecodeError as e:
+        logging.error("Corrupted JSON in %s: %s", TASKS_FILE, e, exc_info=True)
+        console.print("[red]Error: Task file is corrupted and could not be read.[/red]")
+        return []
+    except OSError as e:
+        logging.error("Failed to read %s: %s", TASKS_FILE, e, exc_info=True)
+        console.print("[red]Error: Could not read tasks file.[/red]")
+        return []
+```
+2. Add targeted exception handling for file input/output failures such as `OSError`:
+Original code:
+```python
+def save_tasks(tasks):
+    with open('tasks.json', 'w') as file:
+        json.dump(tasks, file, indent=4)
+```
+New Code:
+```python
+def save_tasks(tasks):
+    try:
+        with open(TASKS_FILE, "w", encoding="utf-8") as file:
+            json.dump(tasks, file, indent=4)
+        logging.info("Saved %d task(s) to %s", len(tasks), TASKS_FILE)
+        return True
+    except OSError as e:
+        logging.error("Failed to save tasks to %s: %s", TASKS_FILE, e, exc_info=True)
+        console.print("[red]Error: Could not save tasks.[/red]")
+        return False
+```
+3. Introduce meaningful logging using Python’s `logging` module to record application events and failures.
+``` python
+def validate_description(description):
+    if not description or not description.strip():
+        logging.warning("Invalid task description provided.")
+        console.print("[red]Error: Task description cannot be empty.[/red]")
+        return False
+    return True
+```
+The original code accepted task descriptions without checking whether they were empty or invalid. This weakens defensive programming and reduces data quality.
+
+5. Added Logging to Task Creation
+```python
+if save_tasks(tasks):
+    logging.info("Added task ID %d", task_id)
+    console.print(f"[green]Task added successfully (ID: {task_id})[/green]")
+```
+This ensures that task creation is recorded in the log file with useful context.
+
+6. Added Logging to Task Listing
+```python
+if not tasks:
+    logging.info("No tasks found for status filter: %s", status)
+    console.print("[red]No tasks found.[/red]")
+    return
+
+
+logging.info("Displayed %d task(s)", len(tasks))
+console.print(table)
+```
+These logs help trace user actions and application behavior during execution.
+
+# AI-Generated Logging vs. Human Reasoning 
+## General Comparison
+
+| Aspect              | AI-Generated Logging                              | Human Reasoning & Best Practices                          |
+|---------------------|---------------------------------------------------|-----------------------------------------------------------|
+| **Focus**           | Adds logging quickly across the codebase          | Adds logging strategically where it provides real value   |
+| **Detail**          | Often generic / one-size-fits-all messages        | Context-rich, meaningful, structured messages             |
+| **System Awareness**| Limited understanding of application context      | Deep understanding of behavior, failure modes & domain    |
+| **Goal**            | Ensure logging *exists*                           | Ensure logging is useful, safe, actionable & debuggable   |
+| **Exception Info**  | Rarely includes stack trace or full context       | Usually includes `exc_info=True` + relevant identifiers   |
+| **Safety**          | Frequently logs sensitive data unintentionally    | Actively avoids PII, credentials, tokens, full payloads   |
 
 
